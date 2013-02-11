@@ -7,4 +7,4 @@ presenterlib-c.o: presenterlib-c.c
 	gcc -d2 -std=gnu99 -c presenterlib-c.c
 
 presenter.o: presenter.scm
-	csc -M -d2 -S -c presenter.scm -O2
+	csc -M -d2 -S -c presenter.scm -O1

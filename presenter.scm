@@ -642,7 +642,6 @@
                  (at-most-one ("tr" tr?
                                (slices/tr "slices" integer-argument 3)
                                (seconds/tr "seconds" real-argument 1))))
- (pp (read-object-from-file "/tmp/design-for-8-blocks/presenter/run-01.sc"))
  (set! *disable-preview* disable-preview?)
  (when viewer-position?
   (set! *viewer-x* viewer-x)
@@ -691,10 +690,7 @@
                                (make-rc-render #f)
                                (make-rc-wait-for-volume #f))))
                        (else (error "Unknown run command" e))))
-                (begin
-                 (pp (string-append runs-directory "/" d))(newline)
-                 (pp (read-object-from-file1 (string-append runs-directory "/" d)))(newline)
-                 (but-last (read-object-from-file (string-append runs-directory "/" d)))))))
+                (but-last (read-object-from-file (string-append runs-directory "/" d))))))
              (directory-list runs-directory)))
   (set! *sequence-name* 'run))
  (imlib-add-path-to-font-path

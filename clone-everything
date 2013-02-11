@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for i in {nondeterminism,define-structure,traversal,scheme2c-compatibility,AD,linear-algebra}; do
+    git clone https://github.com/abarbu/${i}.git
+    (cd $i; chicken-install -s)
+done

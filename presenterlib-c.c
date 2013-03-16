@@ -105,16 +105,17 @@ void* grab_number_keys(void *args_) {
   XEvent      ev;
 
   int keycode5 = XKeysymToKeycode(dpy,XK_5);
+  int keycodeT = XKeysymToKeycode(dpy,XK_T);
 
   grabKey(dpy, root, keycode5);
-
+  grabKey(dpy, root, keycodeT);
   XSelectInput(dpy, root, KeyPressMask );
   
   while(1) {
     XNextEvent(dpy, &ev);
     if(ev.type == KeyPress) {
       XKeyEvent *ke = (XKeyEvent*)&ev;
-      if(ke->keycode == keycode5) {
+      if(ke->keycode == keycode5 || ke->keycode == keycodeT) {
 #if DEBUGGING
         printf("keypress\n");
 #endif
@@ -123,9 +124,7 @@ void* grab_number_keys(void *args_) {
           counter = 0;
           volume = 1;
           volumes++;
-/* #if DEBUGGING */
           printf("volume %d\n", volumes);
-/* #endif */
         } else {
           counter++;
         }
@@ -139,6 +138,7 @@ void* grab_number_keys(void *args_) {
   }
 
   unGrabKey(dpy, root, keycode5);
+  unGrabKey(dpy, root, keycodeT);
   XCloseDisplay(dpy);
   free(args_);
   return NULL;
@@ -574,7 +574,7 @@ int execute_commands(struct renderer_commands_t *commands,
   }
   double time = current_time();
   if(time > advance_time + state->log[state->timepoint].start_timestamp) {
-/* TODO make this a flag, not needed for 9events */
+    /* TODO make this a flag, not needed for 9events */
 #if 0
     presenter_error("(%d,%d) can't keep up, had %lf s but took %lf s",
                     state->timepoint,

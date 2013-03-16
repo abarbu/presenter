@@ -496,7 +496,7 @@
           'finished-sequence)
          ((equal? reason (c-value int "RENDERER_WAS_STOPPED"))
           'was-stopped)
-         (else (error "unknown result rason" reason)))
+         (else (error "unknown result" reason)))
    timepoints
    log)))
 
@@ -535,9 +535,15 @@
     (message "stopped renderer")
     (unless *renderer-running?* (message "renderer isn't running") (abort-gui))
     (set! *renderer-running?* #f)
-    (pp (c-result->scheme&free (stop-renderer) *sequence-arguments*
-                               *sequence-image-cache*))
-    (newline)))
+    (let ((log (c-result->scheme&free (stop-renderer) *sequence-arguments*
+                                      *sequence-image-cache*)))
+     (pp log) (newline)
+     (write-object-to-file
+      log
+      (format #f "~a-~a-~a.log"
+              *run*
+              (car (system-output "date +%s"))
+              (random-integer 1000))))))
   (define-cycle-button 3 0 *sequence-name*
    (lambda () (say (format #f "sequence ~a" *sequence-name*)))
    (y2 "y2")
@@ -546,13 +552,13 @@
    (run "run"))
   (define-spinner-buttons 4 0 "run "
    (lambda ()
-    (unless (> (length *runs-sequence*) (+ *run* 1) 0)
+    (unless (>= (length *runs-sequence*) (+ *run* 1) 0)
      (message "Out of range")(abort-gui))
     (set! *run* (+ *run* 1))
     (message "")
     (redraw-buttons))
    (lambda ()
-    (unless (> (length *runs-sequence*) (- *run* 1)  0)
+    (unless (>= (length *runs-sequence*) (- *run* 1)  0)
      (message "Out of range")(abort-gui))
     (set! *run* (- *run* 1))
     (message "")
@@ -619,6 +625,20 @@
 (define (read-object-from-file1 pathname)
  (if (string=? pathname "-") (read) (call-with-input-file pathname read)))
 
+(define (fixation-to-tr seconds/tr)
+ (tr-timepoint
+  seconds/tr
+  (make-rc-fill-rectangle 0 0 1 1 '#(0 0 0 255))
+  (make-rc-fill-rectangle 0.47 0.495 0.06 0.01 '#(255 255 255 255))
+  (make-rc-fill-rectangle 0.495 0.46 0.01 0.08 '#(255 255 255 255))))
+
+(define (fixation-time seconds/tr)
+ (standard-timepoint
+  seconds/tr
+  (make-rc-fill-rectangle 0 0 1 1 '#(0 0 0 255))
+  (make-rc-fill-rectangle 0.47 0.495 0.06 0.01 '#(255 255 255 255))
+  (make-rc-fill-rectangle 0.495 0.46 0.01 0.08 '#(255 255 255 255))))
+
 (define-command (main
 		 (at-most-one ("window-position"
 			       window-position?
@@ -640,8 +660,8 @@
                                (fps "fps" integer-argument 0)
                                (frames "frames" integer-argument 0)))
                  (at-most-one ("tr" tr?
-                               (slices/tr "slices" integer-argument 3)
-                               (seconds/tr "seconds" real-argument 1))))
+                               (slices/tr "slices" integer-argument 0)
+                               (seconds/tr "seconds" real-argument 0))))
  (set! *disable-preview* disable-preview?)
  (when viewer-position?
   (set! *viewer-x* viewer-x)
@@ -666,7 +686,23 @@
                           (make-rc-fill-rectangle 0 0 1 1 '#(0 0 0 255))
                           (make-rc-fill-rectangle 0.47 0.495 0.06 0.01 '#(255 255 255 255))
                           (make-rc-fill-rectangle 0.495 0.46 0.01 0.08 '#(255 255 255 255)))))
-                       ((and (list? e) (equal? (car e) 'PLAY))
+                       ((and (list? e) (equal? (car e) 'BLANK))
+                        (list (standard-timepoint
+                               (second e)
+                               (make-rc-fill-rectangle 0 0 1 1 '#(0 0 0 255))
+                               (make-rc-render #f))))
+                       ((and (list? e) (= (length e) 3) (equal? (car e) 'PLAY))
+                        (list (standard-timepoint
+                               (/ fps)
+                               (make-rc-load-video (string-append stimuli-directory "/" (second e)) 0)
+                               (make-rc-show-video-frame 0 0 0 1 1 255))
+                              (standard-timepoint
+                               (/ fps)
+                               (make-rc-advance-video-frame 0)
+                               (make-rc-show-video-frame 0 0 0 1 1 255)
+                               (make-rc-loop (- (* fps (third e)) 2))
+                               (make-rc-start-volume #f))))
+                       ((and (list? e) (= (length e) 2) (equal? (car e) 'PLAY))
                         (list (standard-timepoint
                                (/ fps)
                                (make-rc-load-video (string-append stimuli-directory "/" (second e)) 0)
@@ -704,4 +740,4 @@
  ((c-function void ("setup_number_keys" int)) slices/tr)
  (gui '()))
 
-(main (cons "presenter" (command-line-arguments)))
+(apply main (command-line-arguments))

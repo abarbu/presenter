@@ -43,7 +43,7 @@
 (define *renderer-running?* #f)
 
 (define *runs-sequence* '())
-(define *run* 1)
+(define *run* #f)
 
 (define (standard-timepoint time . contents)
  `(,(make-rc-advance time)
@@ -661,7 +661,9 @@
                                (frames "frames" integer-argument 0)))
                  (at-most-one ("tr" tr?
                                (slices/tr "slices" integer-argument 0)
-                               (seconds/tr "seconds" real-argument 0))))
+                               (seconds/tr "seconds" real-argument 0)))
+                 (at-most-one ("run" run? (run "run" integer-argument 1))))
+ (set! *run* run)
  (set! *disable-preview* disable-preview?)
  (when viewer-position?
   (set! *viewer-x* viewer-x)
@@ -706,10 +708,11 @@
                         (list (standard-timepoint
                                (/ fps)
                                (make-rc-load-video (string-append stimuli-directory "/" (second e)) 0)
-                               (make-rc-advance-video-frame 0)
-                               (make-rc-advance-video-frame 0)
-                               (make-rc-advance-video-frame 0)
-                               (make-rc-advance-video-frame 0)
+                               ;; frame advance hack, shouldn't be needed anymore but is needed to exactly reproduce me-y2
+                               ;; (make-rc-advance-video-frame 0)
+                               ;; (make-rc-advance-video-frame 0)
+                               ;; (make-rc-advance-video-frame 0)
+                               ;; (make-rc-advance-video-frame 0)
                                (make-rc-show-video-frame 0 0 0 1 1 255)
                                (make-rc-advance-video-frame 0))
                               (standard-timepoint
